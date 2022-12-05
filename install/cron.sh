@@ -1,4 +1,3 @@
-  GNU nano 6.2                                                                  cron.sh                                                                           
 #!/bin/sh
 set -eu
 
