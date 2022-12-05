@@ -1,0 +1,73 @@
+version: '3.1'
+
+networks:
+  nextcloud:
+
+volumes:
+  postgresql:
+  nginx:
+  nextcloud:
+
+services:
+  nextcloud-nginx:
+    image: 'nginx'
+    container_name: nextcloud_nginx
+    restart: always
+    volumes:
+      - ./nginx:/etc/nginx/conf.d
+      - ./nginx/logs:/var/log/nginx
+      - ./nextcloud:/var/www/html
+    depends_on:
+      - nextcloud
+    networks:
+      - nextcloud
+    ports:
+      - '99:80'
+
+  nextcloud-postgres:
+    image: 'postgres'
+    container_name: nextcloud_postgresql
+    expose:
+      - '5432'
+    restart: unless-stopped
+    env_file:
+      - postgres.env
+    volumes:
+      - ./postgresql:/var/lib/postgresql/data/
+    networks:
+      - nextcloud
+
+  nextcloud-redis:
+    image: redis:latest
+    container_name: nextcloud_redis
+    restart: unless-stopped
+    expose:
+     - '6379'
+    depends_on:
+      - nextcloud
+    networks:
+     - nextcloud
+
+  nextcloud:
+    build: ./install
+    container_name: nextcloud
+    restart: always
+    env_file:
+     - nextcloud.env
+    volumes:
+     - ./nextcloud:/var/www/html
+     - /srv/nextcloud:/var/www/html/data
+    networks:
+     - nextcloud
+    expose:
+     - '9000'
+
+  nextcloud-cron:
+    build: ./install
+    restart: unless-stopped
+    volumes:
+      - ./nextcloud:/var/www/html
+      - /srv/nextcloud:/var/www/html/data
+    networks:
+      - nextcloud
+    entrypoint: /cron.sh
